@@ -1,0 +1,390 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>ÖSO Pomade — for hair & beard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wght@500;800;900&family=Inter:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{ --bg:#121011; --gold:#d6b16a; --gold-2:#f1d9a0; --text:#ece6dc; --muted:#9b9187; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--text);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  body{overflow-x:hidden}
+  #filme{height:2190vh;position:relative}
+  #tela{position:sticky;top:0;height:100vh;width:100%;overflow:hidden;background:var(--bg)}
+
+  /* palco 1920x1080: o pote fica sempre no mesmo lugar */
+  .palco{position:absolute;left:50%;top:50%;width:1920px;height:1080px;transform-origin:center;pointer-events:none}
+  .palco canvas,.palco img{position:absolute;inset:0;width:1920px;height:1080px}
+  .palco.retrato{-webkit-mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent);mask-image:linear-gradient(transparent,#000 22%,#000 78%,transparent)}
+  #pote-camada{opacity:0}
+
+  /* abertura em tela cheia, com fumaça e brilho dourado até o topo */
+  #abre{position:absolute;inset:0;width:100%;height:100%}
+
+  /* frase que passa por trás do pote aberto, legível */
+  #frase{position:absolute;top:27%;left:0;z-index:6;white-space:nowrap;font-family:Archivo,sans-serif;font-weight:900;
+    font-size:clamp(64px,13vw,230px);letter-spacing:-.02em;line-height:1;opacity:0;will-change:transform;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold) 60%,#8a6a35);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  header{position:fixed;inset:0 0 auto 0;display:flex;justify-content:space-between;align-items:center;
+    padding:calc(22px + env(safe-area-inset-top,0px)) clamp(18px,4vw,48px) 22px;z-index:20}
+  .marca{font-family:Archivo,sans-serif;font-weight:900;font-size:22px;letter-spacing:.02em;color:var(--gold)}
+  nav{display:flex;gap:clamp(14px,2.4vw,34px);font-size:11px;letter-spacing:.18em;text-transform:uppercase}
+  nav a{color:var(--text);text-decoration:none;opacity:.75}
+  nav a:hover{opacity:1;color:var(--gold-2)}
+
+  .txt{position:absolute;opacity:0;will-change:transform,opacity;pointer-events:none;z-index:6}
+  /* como na embalagem: ÖSO grande e, embaixo, a frase pequena e branca com a mesma largura do ÖSO */
+  .gigante{left:50%;top:max(84px,10vh);transform:translateX(-50%);text-align:center}
+  .gigante h1{font-family:Archivo,sans-serif;font-weight:900;font-size:min(30vw,17vh,240px);line-height:.9;letter-spacing:-.02em;display:inline-block;
+    background:linear-gradient(180deg,var(--gold-2),var(--gold) 55%,#8a6a35);-webkit-background-clip:text;background-clip:text;color:transparent;
+    filter:drop-shadow(0 0 30px rgba(214,177,106,.25))}
+  .gigante p{font-family:Inter,sans-serif;font-weight:500;text-transform:uppercase;color:#fff;white-space:nowrap;margin-top:.55em}
+  .gigante p span{display:inline-block;opacity:0;will-change:transform,opacity,filter}
+  #linha{height:1px;margin:.35em auto 0;background:linear-gradient(90deg,transparent,var(--gold-2),transparent);transform:scaleX(0)}
+  .esq{left:clamp(18px,4vw,64px);top:50%;transform:translateY(-50%);max-width:30vw}
+  .esq h2{font-family:Archivo,sans-serif;font-weight:800;font-size:clamp(26px,2.5vw,46px);line-height:.95;text-transform:uppercase;
+    color:var(--text);text-shadow:0 0 18px rgba(214,177,106,.35)}
+  .esq h2 em{font-style:normal;color:var(--gold-2)}
+  .esq small{display:block;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:14px}
+  .dir{right:clamp(18px,4vw,64px);top:50%;transform:translateY(-50%);max-width:260px;font-size:14px;line-height:1.6;color:var(--muted)}
+  .topo{left:50%;top:13vh;transform:translateX(-50%);text-align:center;width:max-content}
+  .topo h2{font-family:Archivo,sans-serif;font-weight:800;font-size:clamp(26px,3vw,48px);color:var(--text)}
+  .topo h2 em{font-style:normal;color:var(--gold-2)}
+
+  /* sinal de rolar: só a setinha, subindo */
+  .rolar{position:absolute;left:50%;bottom:calc(26px + env(safe-area-inset-bottom,0px));transform:translateX(-50%);display:flex;flex-direction:column;align-items:center;gap:8px;
+    font-size:10px;letter-spacing:.28em;text-transform:uppercase;color:var(--muted);z-index:7}
+  .rolar svg{width:16px;height:22px;animation:sobe 1.8s ease-in-out infinite}
+  @keyframes sobe{0%{transform:translateY(8px);opacity:0}35%{opacity:1}100%{transform:translateY(-8px);opacity:0}}
+
+  #brilho{position:absolute;inset:0;pointer-events:none;opacity:0;z-index:8;
+    box-shadow:inset 0 0 60px 6px rgba(241,217,160,.55),inset 0 0 180px 30px rgba(214,177,106,.35);border:1px solid rgba(241,217,160,.6)}
+
+  /* cartões */
+  #cartoes{position:absolute;inset:0;opacity:0;pointer-events:none;background:url(img/fundo.jpg) center/cover;z-index:4}
+  #trilho{position:absolute;left:50%;top:54%;height:0}
+  .cartao{position:absolute;top:0;width:min(52vh,62vw);aspect-ratio:3/4;transform:translate(-50%,-50%);border-radius:4px;overflow:hidden;
+    box-shadow:0 30px 80px rgba(0,0,0,.6);outline:1px solid rgba(214,177,106,.25)}
+  .cartao canvas{position:absolute;inset:0;width:100%;height:100%;display:block}
+  #cartoes .rotulo{position:absolute;left:clamp(18px,4vw,64px);top:14vh;max-width:24vw;z-index:20}
+  #cartoes .rotulo small{display:block;font-size:11px;letter-spacing:.24em;text-transform:uppercase;color:var(--gold);margin-bottom:12px}
+  #cartoes .rotulo h3{font-family:Archivo,sans-serif;font-weight:800;font-size:clamp(24px,2.6vw,42px);line-height:1;color:var(--text)}
+  #cartoes .contador{position:absolute;right:clamp(18px,4vw,64px);top:50%;transform:translateY(-50%);font-size:12px;letter-spacing:.2em;color:var(--muted)}
+  /* o pote que anda de uma foto para a outra */
+
+  /* fim */
+  #fim{position:absolute;inset:0;background:url(img/fundo.jpg) center/cover;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:16px;opacity:0;pointer-events:none;text-align:center;padding:0 16px;z-index:10}
+  #fim img{width:min(420px,70vw);filter:drop-shadow(0 30px 40px rgba(0,0,0,.6));margin-bottom:10px}
+  #fim h2{font-family:Archivo,sans-serif;font-weight:800;font-size:clamp(24px,3vw,42px);line-height:1.1;color:var(--text)}
+  #fim h2 em{font-style:normal;color:var(--gold-2)}
+  #fim .chamada{font-size:11px;letter-spacing:.3em;text-transform:uppercase;color:var(--gold)}
+  /* só o texto, dourado como a marca, na mesma letra de "Pomade for hair & beard" */
+  #lista{position:absolute;right:clamp(16px,3vw,40px);bottom:calc(22px + env(safe-area-inset-bottom,0px));background:none;border:0;padding:4px 0;cursor:pointer;
+    font:500 12px Inter,sans-serif;letter-spacing:.32em;text-transform:uppercase;
+    background-image:linear-gradient(180deg,var(--gold-2),var(--gold) 55%,#8a6a35);-webkit-background-clip:text;background-clip:text;color:transparent}
+
+  #carregando{position:fixed;inset:0;background:var(--bg);display:flex;align-items:center;justify-content:center;z-index:50;transition:opacity .6s}
+  #carregando span{font-family:Archivo,sans-serif;font-weight:900;font-size:40px;color:var(--gold)}
+  #carregando em{display:block;font:500 11px Inter,sans-serif;letter-spacing:.3em;color:var(--muted);text-align:center;margin-top:10px;font-style:normal}
+
+  @media (max-width:760px){
+    nav{display:none}
+    .esq{max-width:80vw;top:16vh;transform:none}
+    .dir{display:none}
+    
+    #cartoes .rotulo{top:12vh;transform:none;max-width:80vw}
+    #cartoes .contador{display:none}
+    .cartao{width:62vw}
+  }
+</style>
+</head>
+<body>
+<div id="carregando"><div><span>ÖSO</span><em id="pct">0%</em></div></div>
+
+<header>
+  <div class="marca">ÖSO</div>
+  <nav><a href="#">Pomade</a><a href="#">Rituals</a><a href="#">Ingredients</a><a href="#fim-ancora">Waitlist</a></nav>
+</header>
+
+<section id="filme">
+  <div id="tela">
+    <div class="palco" id="palco"><canvas id="quadro" width="1920" height="1080"></canvas></div>
+    <canvas id="abre"></canvas>
+    <div id="frase">HAIR &amp; BEARD</div>
+    <div class="palco" id="palco-frente"><img id="pote-camada" src="img/pote-aberto-camada.png" alt=""></div>
+
+    <div class="txt gigante" data-de=".00" data-ate=".11">
+      <h1 id="marca-grande">ÖSO</h1>
+      <div id="linha"></div>
+      <p id="sub">Pomade for hair &amp; beard</p>
+    </div>
+
+    <div class="txt esq" data-de=".21" data-ate=".30">
+      <small>Strong hold · natural finish</small>
+      <h2>Not just<br>a <em>pomade.</em></h2>
+    </div>
+    <div class="txt dir" data-de=".21" data-ate=".30">
+      A daily ritual for hair and beard. Hold that lasts all day, a finish that looks like you, and nothing you don't need.
+    </div>
+
+    <div class="txt esq" data-de=".32" data-ate=".50">
+      <small>Every detail</small>
+      <h2>Considered,<br><em>front to back.</em></h2>
+    </div>
+    <div class="txt dir" data-de=".38" data-ate=".50">
+      Natural waxes and oils. No grease, no flakes. Washes out with water.
+    </div>
+
+    <div class="txt topo" data-de=".72" data-ate=".845">
+      <h2>Made for <em>both.</em></h2>
+    </div>
+
+    <div id="brilho"></div>
+
+    <div id="cartoes">
+      <div id="trilho"></div>
+      <div class="rotulo">
+        <small>Rituals</small>
+        <h3>One jar.<br>Two rituals.</h3>
+      </div>
+      <div class="contador" id="contador">01 / 04</div>
+    </div>
+    
+
+    <div id="fim">
+      <img src="img/pote-frente.png" alt="ÖSO Pomade jar">
+      <h2>ÖSO is almost here.<br><em>Be the first to open it.</em></h2>
+      <div class="chamada">Join the waitlist</div>
+      <button id="lista" type="button">Notify me</button>
+    </div>
+
+    <div class="rolar" id="rolar">
+      <svg viewBox="0 0 16 22" fill="none" stroke="#d6b16a" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round"><path d="M8 21V2M2 8l6-6 6 6"/></svg>
+      Scroll
+    </div>
+  </div>
+</section>
+<div id="fim-ancora"></div>
+
+<script>
+const N = 121;
+const giro = [], tampa = [], mao = [], fecha = [];
+const abertura = new Image(), aberturaAlta = new Image();
+let carregados = 0; const total = N * 4 + 2;
+function contar(){ carregados++; document.getElementById('pct').textContent = Math.round(carregados/total*100)+'%';
+  if (carregados === total) { const c=document.getElementById('carregando'); c.style.opacity=0; setTimeout(()=>c.remove(),600); } }
+for (const [img,src] of [[abertura,'img/abertura-vazia.jpg'],[aberturaAlta,'img/abertura-alta-vazia.jpg']]) { img.onload=contar; img.onerror=contar; img.src=src; }
+for (let i=1;i<=N;i++){
+  const n = String(i).padStart(3,'0');
+  for (const [lista,pasta] of [[giro,'giro2'],[tampa,'tampa'],[mao,'mao'],[fecha,'fecha']]) {
+    const a = new Image(); a.onload=contar; a.onerror=contar; a.src='quadros/'+pasta+'/'+n+'.jpg'; lista.push(a);
+  }
+}
+
+// as 4 fotos têm o pote exatamente no mesmo lugar (centro do cartão, 62% da largura).
+// O cartão do meio fica parado: o pote nunca sai da tela, e o que troca é o fundo.
+// Entre uma foto e a seguinte passa um filme contínuo: o pote salta, a mão de antes desce, o cenário muda e a próxima mão sobe e pega.
+const NFOTOS = 4, POTE_NO_CARTAO = .62, NP = 60;
+const passagens = [1,2,3].map(k => { const l = []; for (let i=1;i<=NP;i++){ const im = new Image(); im.src = 'quadros/passa-'+k+'/'+String(i).padStart(3,'0')+'.jpg'; l.push(im); } return l; });
+const fotosParadas = [1,2,3,4].map(n => { const im = new Image(); im.src = 'img/foto'+n+'.jpg'; return im; });
+const trilho = document.getElementById('trilho');
+// lado -1: foto anterior · 0: o filme do meio · +1: a próxima foto
+const cartoes = [-1,0,1].map(lado => { const d=document.createElement('div'); d.className='cartao'; d.dataset.lado = lado;
+  const c=document.createElement('canvas'); c.width=600; c.height=800; d.appendChild(c); trilho.appendChild(d); d._ctx = c.getContext('2d'); d._ultimo = null; return d; });
+function pintar(el, img){ if (img && img !== el._ultimo && img.complete && img.naturalWidth) { el._ctx.drawImage(img, 0, 0, 600, 800); el._ultimo = img; } }
+
+const palco = document.getElementById('palco'), palcoFrente = document.getElementById('palco-frente');
+const cv = document.getElementById('quadro'), cx = cv.getContext('2d');
+const ab = document.getElementById('abre'), ax = ab.getContext('2d');
+const frase = document.getElementById('frase'), camada = document.getElementById('pote-camada');
+const brilho = document.getElementById('brilho'), blocoCartoes = document.getElementById('cartoes');
+const fim = document.getElementById('fim'), rolar = document.getElementById('rolar'), contador = document.getElementById('contador');
+
+const textos = [...document.querySelectorAll('.txt')];
+
+let escala = 1, retrato = false;
+function encaixar(){
+  // celular em pé: o pote ocupa ~85% da largura e o palco se apaga em cima e embaixo
+  retrato = innerWidth/innerHeight < 0.9;
+  escala = retrato ? innerWidth*0.85/760 : Math.max(innerWidth/1920, innerHeight/1080);
+  for (const p of [palco, palcoFrente]) { p.style.transform = 'translate(-50%,-50%) scale('+escala+')'; p.classList.toggle('retrato', retrato); }
+  const d = Math.min(devicePixelRatio||1, 2); ab.width = innerWidth*d; ab.height = innerHeight*d; ax.setTransform(d,0,0,d,0,0);
+}
+const subEl = document.getElementById('sub');
+const letras = [...subEl.textContent].map(ch => { const sp = document.createElement('span'); sp.textContent = ch === ' ' ? '\u00a0' : ch; return sp; });
+subEl.textContent = ''; letras.forEach(sp => subEl.appendChild(sp));
+function medirFrase(){
+  const h = document.getElementById('marca-grande'), sub = subEl;
+  document.getElementById('linha').style.width = h.getBoundingClientRect().width + 'px';
+  const W = h.getBoundingClientRect().width, fs = Math.max(10, W*.075);
+  sub.style.fontSize = fs+'px'; sub.style.letterSpacing = '0px';
+  const n = letras.length, w0 = sub.scrollWidth;
+  const ls = (W - w0) / n;
+  sub.style.letterSpacing = ls+'px'; sub.style.marginRight = (-ls)+'px';
+}
+addEventListener('resize', ()=>{ encaixar(); medirFrase(); }); encaixar();
+document.fonts.ready.then(medirFrase); medirFrase();
+
+const lim = (v,a=0,b=1)=>Math.min(b,Math.max(a,v));
+const faixa = (p,a,b)=>lim((p-a)/(b-a));
+const suave = t=>t*t*(3-2*t);
+const mix = (a,b,t)=>a+(b-a)*t;
+function quadro(lista, t){ return lista[Math.round(lim(t)*(N-1))]; }
+// câmera do palco: k < 1 afasta (o pote fica menor e mais embaixo); as bordas do quadro se fundem no fundo
+const camOff = document.createElement('canvas'); camOff.width = 1920; camOff.height = 1080; const co = camOff.getContext('2d');
+function desenharQuadro(img, k, dy, dx=0){
+  if (!img || !img.complete) return;
+  if (k >= .999 && Math.abs(dy) < .5 && Math.abs(dx) < .5) { cx.drawImage(img,0,0,1920,1080); return; }
+  if (fundoVazio.complete) cx.drawImage(fundoVazio,0,0,1920,1080);
+  co.globalCompositeOperation = 'source-over'; co.clearRect(0,0,1920,1080); co.drawImage(img,0,0,1920,1080);
+  co.globalCompositeOperation = 'destination-in';
+  co.save(); co.translate(960,580); co.scale(1,.62);
+  const g = co.createRadialGradient(0,0,0,0,0,980); g.addColorStop(0,'#000'); g.addColorStop(.62,'#000'); g.addColorStop(1,'rgba(0,0,0,0)');
+  co.fillStyle = g; co.fillRect(-960,-1000,1920,2000); co.restore();
+  cx.drawImage(camOff, 960 + dx - 960*k, 580 + dy - 580*k, 1920*k, 1080*k);
+}
+
+// o pote no palco, em pixels da tela
+function potePalco(){ return {x: innerWidth/2, y: innerHeight/2 + 40*escala, w: 760*escala}; }
+
+// abertura parada: fundo com luz dourada até o topo e o pote real (nítido) por cima.
+// Ao rolar, o pote sobe do pedestal até o lugar do palco e o cenário some.
+const poteReal = new Image(); poteReal.src = 'img/pote-frente.png';
+const fundoVazio = new Image(); fundoVazio.src = 'img/fundo.jpg';
+function desenharAbertura(p){
+  const W = innerWidth, H = innerHeight;
+  const fim = suave(faixa(p,.22,.24));
+  ab.style.opacity = 1 - fim;
+  if (fim >= 1) return;
+  ax.clearRect(0,0,W,H);
+  const img = retrato ? aberturaAlta : abertura;
+  const J = retrato ? {x:373, y:867, w:157} : {x:1027, y:633, w:430};
+  if (!img.naturalWidth) return;
+  const iw = img.naturalWidth, ih = img.naturalHeight;
+  // mais perto do pote: o fundo começa ampliado e o pote fica um pouco abaixo do meio
+  // o pote já começa grande: metade da largura no celular, um quarto no computador
+  const s = Math.max(Math.max(W/iw, H/ih), (retrato ? W*.52 : W*.27) / J.w);
+  let ox = W/2 - J.x*s, oy = H*(retrato ? .66 : .64) - J.y*s;
+  ox = Math.min(0, Math.max(W - iw*s, ox)); oy = Math.min(0, Math.max(H - ih*s, oy));
+  const some = suave(faixa(p,.12,.22));
+  ax.globalAlpha = 1 - some;
+  ax.drawImage(img, ox, oy, iw*s, ih*s);
+  // luz dourada parada, subindo até o topo
+  const g = ax.createRadialGradient(W*.5, H*.12, 0, W*.5, H*.12, Math.max(W,H)*.8);
+  g.addColorStop(0,'rgba(214,160,80,.22)'); g.addColorStop(.45,'rgba(150,100,45,.12)'); g.addColorStop(1,'rgba(0,0,0,0)');
+  ax.fillStyle = g; ax.fillRect(0,0,W,H);
+  ax.globalAlpha = 1;
+  // o pote: começa no pedestal e sobe até o lugar do palco
+  if (!poteReal.naturalWidth) return;
+  const de = {x: ox + J.x*s, y: oy + J.y*s, w: J.w*s}, para = potePalco();
+  const z = suave(faixa(p,.12,.22));
+  const w = mix(de.w, para.w, z), x = mix(de.x, para.x, z), y = mix(de.y, para.y, z) - Math.sin(Math.PI*z)*H*.06;
+  const h = w * poteReal.naturalHeight / poteReal.naturalWidth;
+  // sombra no pedestal, que some quando o pote sobe
+  const sb = de.y + de.w*poteReal.naturalHeight/poteReal.naturalWidth/2;
+  ax.save(); ax.globalAlpha = (1 - z) * (1 - some*.5); ax.filter = 'blur(' + Math.max(4, de.w*.03) + 'px)';
+  ax.fillStyle = 'rgba(0,0,0,.7)'; ax.beginPath(); ax.ellipse(de.x, sb - de.w*.01, de.w*.52, de.w*.05, 0, 0, 6.283); ax.fill(); ax.restore();
+  ax.filter = 'brightness(' + mix(.92, 1, z) + ')';
+  ax.drawImage(poteReal, x - w/2, y - h/2, w, h);
+  ax.filter = 'none';
+}
+
+let alvo = 0, atual = 0;
+// rolagem por trechos (em vh rolados): até a mão o ritmo de antes; a mão com o dobro; os cartões bem devagar
+const TRECHOS = [[0,0],[.70,840],[.845,1190],[1,2090]];
+function progresso(){ const vh = scrollY / innerHeight * 100;
+  for (let i=1;i<TRECHOS.length;i++){ const [p0,v0]=TRECHOS[i-1], [p1,v1]=TRECHOS[i]; if (vh <= v1 || i === TRECHOS.length-1) return lim(p0 + (p1-p0)*lim((vh-v0)/(v1-v0))); }
+  return 1; }
+addEventListener('scroll', ()=>{ alvo = progresso(); }, {passive:true});
+
+const ETAPAS = [[.884,.906],[.912,.934],[.940,.962]];
+// o pote fechado na mão, no último quadro do vídeo (coordenadas do palco 1920x1080) — medido no quadro
+const POTE_NA_MAO = {x:965, y:520, w:735};
+function poteNaMao(){ return {x: innerWidth/2 + (POTE_NA_MAO.x-960)*escala, y: innerHeight/2 + (POTE_NA_MAO.y-540)*escala, w: POTE_NA_MAO.w*escala}; }
+function desenhar(){
+  const p = atual;
+  desenharAbertura(p);
+
+  cx.fillStyle = '#121011'; cx.fillRect(0,0,1920,1080);
+  let img;
+  if (p < .225) img = fundoVazio; // até o pote real chegar, o palco fica sem pote
+  else if (p < .44) img = quadro(giro, faixa(p,.31,.41));
+  else if (p < .505) img = quadro(giro, 1 - faixa(p,.44,.50));
+  else if (p < .71) img = quadro(tampa, faixa(p,.53,.62));
+  else if (p < .78) img = quadro(mao, faixa(p,.71,.78));
+  else img = quadro(fecha, faixa(p,.785,.835));
+  // afasta a câmera antes da tampa abrir (para ver a tampa) e volta antes da mão
+  const longe = suave(faixa(p,.50,.53)) * (1 - suave(faixa(p,.695,.71)));
+  // no celular afasta mais e puxa para a esquerda, para a tampa aberta caber inteira
+  desenharQuadro(img, 1 - (retrato ? .5 : .38)*longe, 120*longe, (retrato ? -110 : 0)*longe);
+
+  for (const el of textos){
+    const de = +el.dataset.de, ate = +el.dataset.ate, f = .025;
+    const a = lim(Math.min(de === 0 ? 1 : faixa(p,de,de+f), 1 - faixa(p,ate-f,ate)));
+    el.style.opacity = a; el.style.translate = '0 ' + ((1-a)*24) + 'px';
+  }
+
+  // HAIR & BEARD atravessa devagar, acima do pote aberto
+  const fr = faixa(p,.625,.70), vis = fr>0 && fr<1;
+  frase.style.opacity = vis ? lim(Math.min(fr*6,(1-fr)*6)) : 0;
+  frase.style.transform = 'translate(' + mix(innerWidth*.9, innerWidth*.1 - frase.offsetWidth, fr) + 'px,-50%)';
+
+
+  // cartões: a mão some rápido e, no lugar dela, o pote já está no balcão
+  const troca = suave(faixa(p,.845,.853)), sai = suave(faixa(p,.968,.98));
+  palco.style.opacity = 1 - troca;
+  blocoCartoes.style.opacity = troca * (1 - sai);
+  // em que passagem estamos: c vai de 0 (balcão) a 3 (última mão)
+  let c = 0, quadroMeio = fotosParadas[0];
+  ETAPAS.forEach(([a,b], j) => { const t = faixa(p,a,b); c += t; if (t > 0 && t < 1) quadroMeio = passagens[j][Math.round(t*(NP-1))]; else if (t >= 1) quadroMeio = fotosParadas[j+1]; });
+  const cw = cartoes[1].offsetWidth, passo = cw * (innerWidth < 760 ? 1.0 : 1.12);
+  const m = poteNaMao(), z = suave(faixa(p,.853,.88));
+  const S0 = (750*escala) / (POTE_NO_CARTAO*cw);
+  const atualI = Math.floor(c + .0001);
+  cartoes.forEach(el=>{
+    const lado = +el.dataset.lado;
+    if (lado === 0) {
+      const esc = mix(S0, 1, z);
+      el.style.left = mix(m.x - innerWidth/2, 0, z)+'px'; el.style.top = mix(m.y - innerHeight*.54, 0, z)+'px';
+      el.style.transform = 'translate(-50%,-50%) scale('+esc+')'; el.style.borderRadius = (4/esc)+'px';
+      el.style.opacity = 1; el.style.zIndex = 10;
+      pintar(el, quadroMeio);
+    } else {
+      // os lados mostram a foto anterior e a próxima; trocam quando a passagem termina
+      const n = atualI + lado, existe = n >= 0 && n < NFOTOS;
+      el.style.left = (lado*passo)+'px'; el.style.top = '0px';
+      el.style.transform = 'translate(-50%,-50%) scale(.72)';
+      el.style.opacity = existe ? .8*z : 0; el.style.filter = 'brightness(.5)'; el.style.zIndex = 5;
+      if (existe) pintar(el, fotosParadas[n]);
+    }
+  });
+  contador.textContent = '0'+(Math.min(atualI,3)+1)+' / 0'+NFOTOS;
+  document.querySelector('#cartoes .rotulo').style.opacity = z;
+
+  const f8 = suave(faixa(p,.965,.99));
+  fim.style.opacity = f8; fim.style.pointerEvents = f8>.5 ? 'auto' : 'none';
+  rolar.style.opacity = 1 - faixa(p,.01,.04);
+  // a linha dourada se abre do centro e as letras sobem, uma a uma, do desfoque para o branco
+  document.getElementById('linha').style.transform = 'scaleX(' + suave(faixa(p,.008,.025)) + ')';
+  const nL = letras.length;
+  letras.forEach((sp,i)=>{
+    const ordem = Math.abs(i - (nL-1)/2) / ((nL-1)/2);   // do centro para as pontas
+    const t = suave(faixa(p, .018 + ordem*.018, .03 + ordem*.018));
+    sp.style.opacity = t;
+    sp.style.transform = 'translateY(' + ((1-t)*0.9) + 'em)';
+    sp.style.filter = 'blur(' + ((1-t)*6) + 'px)';
+  });
+}
+
+function laco(){ if (!isFinite(alvo)) alvo = progresso(); if (!isFinite(atual)) atual = alvo;
+  atual += (alvo - atual) * .12; if (Math.abs(alvo-atual) < .00002) atual = alvo; desenhar(); requestAnimationFrame(laco); }
+alvo = atual = progresso(); requestAnimationFrame(laco);
+
+document.getElementById('lista').addEventListener('click', e=>{ e.currentTarget.textContent = 'You are on the list'; });
+</script>
+</body>
+</html>
